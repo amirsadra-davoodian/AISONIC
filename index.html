@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AISONIC</title>
+
+<style>
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+
+body {
+height: 100vh;
+width: 100vw;
+background: radial-gradient(circle at top, #120018, #0c0218);
+font-family: Arial, sans-serif;
+overflow: hidden;
+display: flex;
+justify-content: center;
+align-items: center;
+cursor: none;
+}
+#bgCanvas{
+    position:fixed;
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    z-index:-999;
+
+    pointer-events:none;
+}
+
+/* ======================
+   MOUSE (ALWAYS ON TOP FIX)
+====================== */
+.glow {
+    position: fixed;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(113, 32, 180, 0.158), transparent 70%);
+    transform: translate(-50%, -50%);
+    z-index: 9999; /* 👈 مهم: روی ویدیو هم میاد */
+}
+
+.cursor {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #a517dd;
+    box-shadow: 0 0 15px #6bd5ff6e;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10000;
+}
+
+/* ======================
+   COMING SOON
+====================== */
+.coming {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 88px;
+    font-weight: bold;
+    letter-spacing: 6px;
+    color: #fd48d6;
+    opacity: 0.2;
+    text-shadow: 0 0 25px #ff4fd8, 0 0 50px #7a5cff;
+    animation: comingPulse 3.5s infinite;
+}
+
+.coming span {
+    display: block;
+}
+
+@keyframes comingPulse {
+    0% { transform: translateX(-50%) scale(1); opacity: 0.15; }
+    50% { transform: translateX(-50%) scale(1.08); opacity: 0.35; }
+    100% { transform: translateX(-50%) scale(1); opacity: 0.15; }
+}
+
+/* ======================
+   AI
+====================== */
+.ai-container{
+position:relative;
+display:flex;
+justify-content:center;
+align-items:center;
+height:110px;
+}
+
+.ai-container{
+transition:
+opacity .6s ease,
+transform .6s ease;
+}
+
+.ai-container.hide{
+opacity:0;
+transform:scale(.8);
+}
+
+.ai{
+
+position:relative;
+
+font-size:85px;
+font-weight:700;
+letter-spacing:4px;
+
+background:linear-gradient(
+90deg,
+#ff4fd8,
+#a45cff,
+#00ffd5
+);
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+display:inline-block;
+
+animation:
+aiBreath 3.5s infinite ease-in-out,
+aiFlicker 3.5s infinite;
+}
+
+/* ENERGY CORE */
+.ai::before{
+
+content:"AI";
+
+position:absolute;
+left:0;
+top:0;
+
+background:inherit;
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+filter:blur(18px);
+
+opacity:.9;
+
+z-index:-1;
+
+animation:aiAura 3.5s infinite ease-in-out;
+}
+
+/* OUTER GLOW */
+.ai::after{
+
+content:"";
+
+position:absolute;
+
+left:50%;
+top:50%;
+
+width:180px;
+height:180px;
+
+transform:translate(-50%,-50%);
+
+border-radius:50%;
+
+background:
+radial-gradient(
+circle,
+rgba(255,79,216,.35),
+rgba(122,92,255,.18),
+transparent 70%
+);
+
+filter:blur(22px);
+
+z-index:-2;
+
+animation:aiCore 3.5s infinite ease-in-out;
+}
+
+/* MAIN SCALE */
+@keyframes aiBreath {
+
+0%{
+transform:scale(1);
+}
+
+50%{
+transform:scale(1.12);
+}
+
+100%{
+transform:scale(1);
+}
+
+}
+
+/* GLOW STRENGTH */
+@keyframes aiAura {
+
+0%{
+filter:blur(12px);
+opacity:.4;
+}
+
+50%{
+filter:blur(28px);
+opacity:1;
+}
+
+100%{
+filter:blur(12px);
+opacity:.4;
+}
+
+}
+
+/* ENERGY RING */
+@keyframes aiCore {
+
+0%{
+transform:translate(-50%,-50%) scale(.8);
+opacity:.25;
+}
+
+50%{
+transform:translate(-50%,-50%) scale(1.3);
+opacity:.8;
+}
+
+100%{
+transform:translate(-50%,-50%) scale(.8);
+opacity:.25;
+}
+
+}
+
+/* ELECTRIC FLICKER */
+@keyframes aiFlicker {
+
+0%,100%{
+filter:drop-shadow(0 0 12px #ff4fd8);
+}
+
+50%{
+filter:
+drop-shadow(0 0 13px #ff4fd952)
+drop-shadow(0 0 20px #7a5cff50)
+drop-shadow(0 0 25px #00ffd556);
+}
+
+}
+
+
+/* ======================
+   AISONIC (GLITCH SAFE)
+====================== */
+.aison {
+    font-size: 38px;
+    margin-top: 10px;
+    letter-spacing: 6px;
+    font-weight: bold;
+    color: #00ffd5;
+    position: relative;
+    animation: baseFlicker 2.5s infinite;
+}
+
+/* shadow */
+.aison::before {
+    content: "AISONIC";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(0, 247, 255, 0.534);
+    filter: blur(10px);
+}
+
+/* ELECTRIC GLITCH COPY LAYER */
+.aison::after {
+    content: "AISONIC";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    color: rgba(255,79,216,0.35);
+    text-shadow:
+        2px 0 #ff4fd8,
+        -2px 0 #7a5cff;
+    opacity: 0;
+    animation: glitchElectric 2.5s infinite;
+}
+
+/* BASE FLICKER */
+@keyframes baseFlicker {
+    0% { opacity: 1; }
+    45% { opacity: 1; }
+    50% { opacity: 0.6; }
+    55% { opacity: 1; }
+    70% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
+/* ELECTRIC STRIKE GLITCH */
+@keyframes glitchElectric {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(0px);
+        filter: blur(0px);
+    }
+
+    10% {
+        opacity: 0.4;
+        transform: translateX(calc(-50% + 2px)) translateY(-1px);
+    }
+
+    20% {
+        opacity: 0;
+    }
+
+    30% {
+        opacity: 0.6;
+        transform: translateX(calc(-50% - 3px)) translateY(1px);
+        text-shadow: -3px 0 #ff4fd8;
+    }
+
+    40% {
+        opacity: 0;
+    }
+
+    60% {
+        opacity: 0.5;
+        transform: translateX(-50%) translateY(-2px);
+        filter: blur(1px);
+    }
+
+    80% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+/* ======================
+INPUT CARD (NEW SYSTEM)
+====================== */
+
+.input-card {
+width: min(826px, 80vw);
+height: 90px;
+border-radius: 20px;
+border: 2px solid rgba(255,79,216,0.4);
+background: rgba(0,0,0,0.35);
+backdrop-filter: blur(10px);
+box-shadow: 0 0 55px rgba(122,92,255,0.25);
+display: flex;
+align-items: center;
+justify-content: center;
+text-align: center;
+color: #ff4fd8;
+font-size: 18px;
+letter-spacing: 2px;
+cursor: pointer;
+transition: 0.6s ease;
+position: relative;
+overflow: hidden;
+}
+
+
+/* EXPANDED STATE (same size as video box) */
+.input-card.expanded {
+height: calc(min(280px, 80vw) * 16 / 9);
+border-radius: 18px;
+}
+
+/* TEXT INSIDE CARD */
+.input-text {
+transition: 0.5s ease;
+font-family: monospace;
+text-shadow: 0 0 10px #ff4fd8;
+}
+
+/* ANIMATED TEXT INSIDE EXPAND */
+.expanded .input-text {
+animation: textRise 1s ease forwards;
+}
+
+@keyframes textRise {
+0% { opacity: 0; transform: translateY(20px); }
+100% { opacity: 1; transform: translateY(0px); }
+}
+
+/* LAYOUT */
+.card {
+display: flex;
+flex-direction: column;
+align-items: center;
+text-align: center;
+margin-top: 85px;
+gap: 20px;
+}
+
+.generator {
+margin-top: 28px;
+font-size: 20px;
+font-weight: bold;
+letter-spacing: 3px;
+background: linear-gradient(90deg,#ff4fd8,#9d4dff,#7a5cff,#4f9dff,#00ffd5);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+animation: genPulse 3.5s infinite;
+}
+
+@keyframes genPulse {
+0% { transform: scale(1); opacity: 0.6; }
+50% { transform: scale(1.1); opacity: 1; }
+100% { transform: scale(1); opacity: 0.6; }
+}
+
+/* MENU */
+.menu-box{
+position:absolute;
+top:20px;
+left:40px;
+width:170px;
+min-height:52px;
+padding:14px;
+border-radius:18px;
+border:1px solid rgba(255,255,255,.15);
+background:rgba(20,10,40,.42);
+backdrop-filter:blur(10px);
+box-shadow:0 0 20px #ff4fd8,0 0 40px rgba(122,92,255,.4);
+color:#f94dff;
+z-index:1000;
+overflow:hidden;
+transition:max-height .65s ease,transform .35s ease,box-shadow .35s ease;
+animation:menuPulse 3.5s infinite ease-in-out;
+}
+.menu-box.open{max-height:420px;}
+.menu-box.closed{max-height:52px;}
+.menu-title{text-align:center;font-weight:bold;cursor:pointer;}
+.menu-items{margin-top:12px;opacity:0;transition:opacity .4s ease;}
+.menu-box.open .menu-items{opacity:1;}
+.menu-item{
+padding:12px 6px;
+text-align:center;
+cursor:pointer;
+transition:.35s ease;
+
+background:linear-gradient(
+90deg,
+#ff4fd8,
+#9d4dff,
+#7a5cff,
+#4f9dff,
+#00ffd5
+);
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+text-shadow:
+0 0 30px #ff4fd8,
+0 0 40px #7a5cff,
+0 0 50px #00ffd5;
+}
+.menu-item:hover{
+transform:translateY(-5px) scale(1.06);
+
+filter:
+drop-shadow(0 0 50px #ff4fd8)
+drop-shadow(0 0 50px #7a5cff);
+}
+.menu-sep{opacity:.7;text-align:center;}
+@keyframes menuPulse{
+0%,100%{transform:scale(1);}
+50%{transform:scale(1.04);}
+}
+
+.menu-sep{
+text-align:center;
+
+background:linear-gradient(
+90deg,
+#ff4fd8,
+#7a5cff,
+#00ffd5
+);
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+text-shadow:
+0 0 10px #ff4fd8,
+0 0 20px #7a5cff;
+}
+
+@keyframes menuPulse{
+0%,100%{
+transform:scale(1);
+box-shadow:
+0 0 20px #ff4fd8,
+0 0 40px #7a5cff;
+}
+
+50%{
+transform:scale(1.04);
+
+box-shadow:
+0 0 10px #ff4fd8,
+0 0 40px #7a5cff,
+0 0 30px #00ffd5;
+}
+}
+
+
+/* ULTRA GLASS PANELS */
+.menu-box{
+backdrop-filter:blur(1px)!important;
+border:1px solid rgba(255,255,255,.18)!important;
+box-shadow:0 0 25px rgba(255,79,216,.5),0 0 60px rgba(122,92,255,.35)!important;
+}
+.input-card{
+background:rgba(255,255,255,.05)!important;
+backdrop-filter:blur(1px)!important;
+border:1px solid rgba(255,255,255,.18)!important;
+box-shadow:0 0 35px rgba(255,79,216,.35),0 0 80px rgba(122,92,255,.15)!important;
+}
+.ai-panel{
+position:absolute;
+left:30px;
+bottom:25px;
+margin-top:18px;
+width:min(300px,85vw);
+padding:30px;
+border-radius:24px;
+background:rgba(255,255,255,.05);
+backdrop-filter:blur(1px);
+border:1px solid rgba(255,255,255,.15);
+box-shadow:0 0 30px rgba(255,79,216,.25),0 0 60px rgba(122,92,255,.18);
+display:flex;
+flex-direction:column;
+gap:12px;
+align-items:center;
+}
+.live-status{
+color:#00ff55;
+font-family:monospace;
+text-shadow:0 0 10px #04c544;
+animation:blink 1.4s infinite;
+}
+@keyframes blink{50%{opacity:.45;}}
+.training,.feature-showcase{
+font-family:monospace;
+background:linear-gradient(90deg,#ff4fd8,#00ffd5);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+.visualizer{display:flex;gap:8px;height:34px;align-items:flex-end}
+.visualizer span{
+width:5px;
+border-radius:10px;
+background:linear-gradient(#ff4fd8,#00ffd5);
+animation:eq 1s infinite ease-in-out;
+}
+@keyframes eq{50%{height:30px;}}
+
+</style>
+</head>
+
+
+<canvas id="bgCanvas"></canvas>
+<body>
+
+<div class="glow" id="glow"></div>
+<div class="cursor" id="cursor"></div>
+
+
+<div id="menuBox" class="menu-box closed">
+<div class="menu-title" onclick="toggleMenu()">Menu </div>
+<div class="menu-items">
+<div class="menu-item"> Music ◉ </div>
+<div class="menu-sep">────────────────</div>
+<div class="menu-sep">────────────────</div>
+<div class="menu-item"> Account ⬢ </div>
+<div class="menu-sep">────────────────</div>
+<div class="menu-sep">────────────────</div>
+<div class="menu-item"> AI 2026 ✦ </div>
+<div class="menu-sep">────────────────</div>
+<div class="menu-sep">────────────────</div>
+<div class="menu-item"> Coming Soon ◈ </div>
+<div class="menu-sep">────────────────</div>
+<div class="menu-sep">────────────────</div>
+<div class="menu-item" onclick="toggleMenu()"> Back ◄ </div>
+</div>
+</div>
+
+<div class="coming">
+<span>COMING</span>
+<span>SOON</span>
+</div>
+
+<div class="card">
+
+<div class="ai-container">
+    <div class="ai">AI</div>
+</div>
+<div class="aison">AISONIC</div>
+
+<div class="input-card" id="card" onclick="toggleCard()">
+<div class="input-text"> What's the AISONIC ? </div>
+</div>
+
+<div class="generator">AI Music Generator</div>
+
+<div class="ai-panel">
+<div class="live-status"> ● SYSTEM ONLINE<br>AISONIC CORE ACTIVE</div>
+<div class="training">Training AI Model... <span id="pct">90.4%</span></div>
+<div class="visualizer">
+<span style="height:10px"></span>
+<span style="height:18px;animation-delay:.1s"></span>
+<span style="height:28px;animation-delay:.2s"></span>
+<span style="height:14px;animation-delay:.3s"></span>
+<span style="height:30px;animation-delay:.4s"></span>
+<span style="height:20px;animation-delay:.5s"></span>
+<span style="height:26px;animation-delay:.6s"></span>
+</div>
+<div class="feature-showcase" id="featureShow">Generate Trap Music</div>
+</div>
+
+
+</div>
+<script>
+
+const canvas = document.getElementById("bgCanvas");
+const ctx = canvas.getContext("2d");
+
+
+function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+resize();
+window.addEventListener("resize", resize);
+
+const colors = [
+"#00E5FF",
+"#00FFD5",
+"#7A5CFF",
+"#FF4FD8",
+"#66FF99"
+];
+
+const particles = [];
+
+for(let i=0;i<555;i++){
+
+    particles.push({
+
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height,
+
+        vx:(Math.random()-0.5)*0.2,
+        vy:(Math.random()-0.5)*0.2,
+
+        color:colors[
+            Math.floor(Math.random()*colors.length)
+        ],
+
+        size:Math.random()*2
+
+    });
+
+}
+
+function animate(){
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    for(const p of particles){
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if(p.x < 0) p.x = canvas.width;
+        if(p.x > canvas.width) p.x = 0;
+
+        if(p.y < 0) p.y = canvas.height;
+        if(p.y > canvas.height) p.y = 0;
+
+        ctx.beginPath();
+
+        ctx.fillStyle = p.color;
+
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = p.color;
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+    }
+
+    requestAnimationFrame(animate);
+
+}
+
+animate();
+
+</script>
+
+<script>
+document.addEventListener("mousemove", (e) => {
+document.getElementById("glow").style.left = e.clientX + "px";
+document.getElementById("glow").style.top = e.clientY + "px";
+
+document.getElementById("cursor").style.left = e.clientX + "px";
+document.getElementById("cursor").style.top = e.clientY + "px";
+});
+
+function toggleCard() {
+const card = document.getElementById("card");
+card.classList.toggle("expanded");
+
+const ai = document.querySelector(".ai-container");
+
+if(card.classList.contains("expanded")){
+    ai.classList.add("hide");
+}else{
+    ai.classList.remove("hide");
+}
+
+const text = card.querySelector(".input-text");
+
+if (card.classList.contains("expanded")) {
+text.innerHTML =
+`<div style="display:flex;flex-direction:column;gap:10px;">
+<div style="opacity:0; animation: textRise 0.6s forwards;"> AISONIC is </div>
+<div style="opacity:0; animation: textRise 1s forwards;"> an AI Music Gnerator </div>
+<div style="opacity:0; animation: textRise 1.4s forwards;"> This AI is capable of creating all of music styles </div>
+<div style="opacity:0; animation: textRise 1.8s forwards;"> This AI, with its extremely large database of all of instruments </div>
+<div style="opacity:0; animation: textRise 2.2s forwards;"> Capable of creating extremely high-quality </div>
+<div style="opacity:0; animation: textRise 2.2s forwards;"> that is close to reality </div>
+<div style="opacity:0; animation: textRise 2.6s forwards;"> This AI is still under construction </div>
+<div style="opacity:0; animation: textRise 3.0s forwards;"> This AI will be released soon </div>
+<div style="opacity:0; animation: textRise 3.4s forwards;"> And you can play any music you can think of... </div>
+<div style="opacity:0; animation: textRise 3.7s forwards;"> Make it a reality </div>
+<div style="opacity:0; animation: textRise 4.1s forwards;"> Thank you team : </div>
+<div style="opacity:0; animation: textRise 4.5s forwards;"> ⬇️ </div>
+<div style="opacity:0; animation: textRise 4.9s forwards;" >Amir Sadra </div>
+<div style="opacity:0; animation: textRise 5.3s forwards;"> AS.GENIUS </div>
+<div style="opacity:0; animation: textRise 5.7s forwards;"> AISONIC </div>
+</div>`;
+} else {
+text.innerHTML = "What's the AISONIC ?";
+}
+}
+
+function toggleMenu(){
+const m=document.getElementById('menuBox');
+m.classList.toggle('open');
+m.classList.toggle('closed');
+}
+
+
+const features=["Generate Trap Music","Generate Orchestra","Generate EDM","Generate Hip-Hop","Generate Cinematic Music","Generate Dril Music","Generate Rap Music"];
+let fi=0;
+setInterval(()=>{
+fi=(fi+1)%features.length;
+const el=document.getElementById('featureShow');
+if(el) el.textContent=features[fi];
+},5000);
+
+let pct=97.4;
+setInterval(()=>{
+pct+=0.1;
+if(pct>99.9)pct=97.4;
+const el=document.getElementById('pct');
+if(el) el.textContent=pct.toFixed(1)+'%';
+},2000);
+
+</script>
+
+</body>
+</html>
+
+
