@@ -632,11 +632,93 @@ body {
 .sheet-grid .module-btn{ flex-direction:column; text-align:center; gap:6px; padding:14px 8px; }
 .sheet-grid .m-icon{ font-size:20px; }
 
+/* ======================
+   MOBILE — AI status FAB (replaces the big ai-panel box) + shared sheet backdrop
+====================== */
+.ai-status-fab{
+  display:none;
+  position:fixed; left:16px; bottom:16px; z-index:15000;
+  width:58px; height:58px; border-radius:50%;
+  align-items:center; justify-content:center;
+  animation: neonCycle 7s linear infinite, fabFloat 2.6s ease-in-out infinite;
+}
+.ai-status-icon{ width:26px; height:26px; filter:drop-shadow(0 0 6px rgba(255,79,216,.7)); }
+.ai-status-sheet-content{ display:flex; flex-direction:column; gap:14px; align-items:center; padding:6px 0 4px; }
+
+.sheet-backdrop{
+  position:fixed; inset:0; z-index:15900;
+  background:rgba(0,0,0,.4);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  opacity:0; pointer-events:none;
+  transition:opacity .35s ease;
+}
+.sheet-backdrop.show{ opacity:1; pointer-events:auto; }
+
 @media (max-width:900px){
   .side-rail{ display:none; }
   .brand-watermark{ display:none; }
   .mobile-fab{ display:flex; }
   .mobile-sheet{ display:block; }
+  .ai-panel{ display:none; }
+  .ai-status-fab{ display:flex; }
+}
+
+/* ======================
+   MOBILE — let the page grow & scroll while the "What's AISONIC" card is
+   expanded, so every line (down through "AI Music Generator") is reachable.
+   Only active while expanded — collapsed view is pixel-identical to before.
+====================== */
+@media (max-width:900px){
+  body.card-open{
+    height:auto; min-height:100vh; min-height:100dvh;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+  }
+  body.card-open .main-site{
+    height:auto; min-height:100vh; min-height:100dvh;
+    align-items:flex-start; padding:74px 0 50px;
+  }
+  body.card-open .input-card.expanded{
+    height:auto; max-height:none; overflow-y:visible;
+  }
+}
+
+/* ======================
+   MOBILE PERFORMANCE MODE
+   Same look, but the nonstop blur/filter/box-shadow repaints that were
+   saturating phone GPUs (and delaying taps by several seconds) are removed
+   or swapped for a cheap static equivalent. Desktop is completely untouched.
+====================== */
+@media (max-width:900px){
+  /* backdrop-filter is the single most expensive compositor op on mobile —
+     drop it and lean on a slightly more opaque solid background instead */
+  .glass-neon, .toast, .rafael-overlay, .rafael-big-overlay, .rafael-end-overlay{
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+  }
+  .glass-neon{ background:rgba(22,8,34,.74); }
+  .toast{ background:rgba(14,6,26,.9); }
+  .rafael-overlay{ background:rgba(5,0,0,.92); }
+  .rafael-big-overlay{ background:rgba(0,0,0,.88); }
+  .rafael-end-overlay{ background:rgba(0,0,0,.72); }
+
+  /* neonCycle animates box-shadow + border-color forever on every glass panel
+     at once (menu, input card, ai panel, fab, sheet) — freeze it to one frame */
+  .glass-neon{ animation:none; border-color:rgba(255,79,216,.4); box-shadow:0 0 18px rgba(255,79,216,.22); }
+  .mobile-fab{ animation:fabFloat 2.6s ease-in-out infinite; box-shadow:0 0 18px rgba(255,79,216,.3); }
+  .ai-status-fab{ animation:fabFloat 2.6s ease-in-out infinite; box-shadow:0 0 18px rgba(255,79,216,.3); }
+  .rafael-fab{ animation:none; box-shadow:0 0 18px rgba(255,40,40,.55); }
+
+  /* filter:blur() keyframes recompute a full blur pass every frame — freeze them */
+  .ai{ animation:aiBreath 3.5s infinite ease-in-out; }
+  .ai::before{ animation:none; filter:blur(10px); opacity:.5; }
+  .aison::after{ animation:none; opacity:0; }
+
+  /* the rgb-split glitch flicker is pure decoration duplicated across ~6 elements —
+     each one animates clip-path + transform forever; turn them off on mobile */
+  .glitch-copy, .ai-glitch, .aison-glitch{ animation:none !important; opacity:0 !important; }
+
+  /* animating "height" forces a layout reflow every frame — rest the eq bars */
+  .visualizer span{ animation:none; }
 }
 
 /* ======================
@@ -846,16 +928,18 @@ body {
 }
 
 @media (max-width:640px){
-  .coming{ font-size:44px; letter-spacing:4px; top:14px; }
+  .coming{ font-size:32px; letter-spacing:3px; top:78px; }
   .ai{ font-size:52px; }
   .aison{ font-size:24px; }
-  .ai-panel{ left:12px; right:12px; width:auto; bottom:90px; padding:18px; }
-  .menu-box{ left:12px; top:12px; width:150px; }
+  .ai-panel{ display:none !important; }
+  .menu-box{ left:10px; top:12px; width:128px; padding:10px; }
+  .menu-title{ font-size:11px; }
   .input-card{ width:88vw; }
   .card{ margin-top:60px; }
   .rafael-fab{ width:52px; height:52px; top:14px; right:14px; border-radius:50%; }
   .rafael-fab-label{ top:62px; right:14px; width:52px; font-size:7.5px; letter-spacing:1.5px; }
   .rafael-modal{ width:96vw; max-height:92vh; }
+  .ai-status-fab{ left:14px; right:auto; bottom:16px; width:52px; height:52px; }
 }
 </style>
 </head>
@@ -981,6 +1065,43 @@ body {
     <span>v0.97 CORE</span>
   </div>
 
+  <!-- SHARED BLUR BACKDROP FOR BOTTOM SHEETS -->
+  <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeAllSheets()"></div>
+
+  <!-- MOBILE AI STATUS FAB (replaces the big ai-panel box on mobile) -->
+  <div class="ai-status-fab glass-neon" id="aiStatusFab" onclick="toggleAiSheet(event)">
+    <svg class="ai-status-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="aiStatusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ff4fd8"/>
+          <stop offset="50%" stop-color="#9d4dff"/>
+          <stop offset="100%" stop-color="#00ffd5"/>
+        </linearGradient>
+      </defs>
+      <path d="M12 2 L14.4 9.4 L21.8 12 L14.4 14.6 L12 22 L9.6 14.6 L2.2 12 L9.6 9.4 Z" fill="url(#aiStatusGrad)"/>
+    </svg>
+  </div>
+
+  <!-- MOBILE AI STATUS SHEET -->
+  <div class="mobile-sheet glass-neon" id="aiStatusSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">AI STATUS</div>
+    <div class="ai-status-sheet-content">
+      <div class="live-status"> ● SYSTEM ONLINE<br>AISONIC CORE ACTIVE</div>
+      <div class="training">Training AI Model... <span id="pctMobile">90.4%</span></div>
+      <div class="visualizer">
+        <span style="height:10px"></span>
+        <span style="height:18px;animation-delay:.1s"></span>
+        <span style="height:28px;animation-delay:.2s"></span>
+        <span style="height:14px;animation-delay:.3s"></span>
+        <span style="height:30px;animation-delay:.4s"></span>
+        <span style="height:20px;animation-delay:.5s"></span>
+        <span style="height:26px;animation-delay:.6s"></span>
+      </div>
+      <div class="feature-showcase" id="featureShowMobile">Generate Trap Music</div>
+    </div>
+  </div>
+
   <!-- MOBILE FAB -->
   <div class="mobile-fab glass-neon" id="mobileFab" onclick="toggleSheet(event)">⚡</div>
 
@@ -1028,6 +1149,12 @@ body {
 
 <script>
 /* ==============================
+   MOBILE / LOW-POWER DETECTION
+   (used everywhere below to trim expensive effects — desktop is untouched)
+============================== */
+const IS_MOBILE = window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(max-width: 900px)').matches;
+
+/* ==============================
    BACKGROUND: floating music notes
 ============================== */
 const canvas = document.getElementById("bgCanvas");
@@ -1044,7 +1171,7 @@ const colors = ["#00E5FF","#00FFD5","#7A5CFF","#FF4FD8","#9D4DFF","#4F9DFF"];
 const glyphs = ["♪","♫","♬","♩","𝅘𝅥𝅮"];
 
 const particles = [];
-const NOTE_COUNT = 110;
+const NOTE_COUNT = IS_MOBILE ? 22 : 110;
 
 for(let i=0;i<NOTE_COUNT;i++){
   particles.push({
@@ -1061,7 +1188,18 @@ for(let i=0;i<NOTE_COUNT;i++){
   });
 }
 
-function animate(){
+let lastFrameTime = 0;
+const MOBILE_FRAME_INTERVAL = 1000/30; // cap mobile to ~30fps, desktop stays uncapped
+
+function animate(ts){
+  if(IS_MOBILE){
+    if(ts - lastFrameTime < MOBILE_FRAME_INTERVAL){
+      requestAnimationFrame(animate);
+      return;
+    }
+    lastFrameTime = ts;
+  }
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   for(const p of particles){
@@ -1078,15 +1216,19 @@ function animate(){
     ctx.globalAlpha = p.alpha;
     ctx.font = `${p.size}px sans-serif`;
     ctx.fillStyle = p.color;
-    ctx.shadowBlur = 14;
-    ctx.shadowColor = p.color;
+    if(!IS_MOBILE){
+      /* ctx.shadowBlur is by far the most expensive canvas op on mobile GPUs —
+         skip it there so the main thread never backs up behind frame paint. */
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = p.color;
+    }
     ctx.fillText(p.glyph, x, p.y);
     ctx.restore();
   }
 
   requestAnimationFrame(animate);
 }
-animate();
+requestAnimationFrame(animate);
 
 /* ==============================
    CURSOR + GLOW + SPARK TRAIL
@@ -1095,17 +1237,19 @@ const glowEl = document.getElementById("glow");
 const cursorEl = document.getElementById("cursor");
 let sparkCounter = 0;
 
-document.addEventListener("mousemove", (e) => {
-  glowEl.style.left = e.clientX + "px";
-  glowEl.style.top = e.clientY + "px";
-  cursorEl.style.left = e.clientX + "px";
-  cursorEl.style.top = e.clientY + "px";
+if(!IS_MOBILE){
+  document.addEventListener("mousemove", (e) => {
+    glowEl.style.left = e.clientX + "px";
+    glowEl.style.top = e.clientY + "px";
+    cursorEl.style.left = e.clientX + "px";
+    cursorEl.style.top = e.clientY + "px";
 
-  sparkCounter++;
-  if(sparkCounter % 3 === 0){
-    spawnSpark(e.clientX, e.clientY);
-  }
-});
+    sparkCounter++;
+    if(sparkCounter % 3 === 0){
+      spawnSpark(e.clientX, e.clientY);
+    }
+  });
+}
 
 function spawnSpark(x,y){
   const spark = document.createElement("div");
@@ -1180,6 +1324,7 @@ function toggleCard(e) {
   e.stopPropagation();
   const card = document.getElementById("card");
   card.classList.toggle("expanded");
+  document.body.classList.toggle("card-open", card.classList.contains("expanded"));
 
   const ai = document.querySelector(".ai-container");
   if(card.classList.contains("expanded")){
@@ -1291,16 +1436,41 @@ function jitterVisualizer(){
   });
 }
 
-/* mobile sheet */
+/* mobile sheets (AI modules + AI status) share one blur backdrop */
+function closeAllSheets(){
+  document.getElementById('mobileSheet').classList.remove('open');
+  document.getElementById('aiStatusSheet').classList.remove('open');
+  document.getElementById('sheetBackdrop').classList.remove('show');
+}
 function toggleSheet(e){
   if(e) e.stopPropagation();
-  document.getElementById('mobileSheet').classList.toggle('open');
+  const sheet = document.getElementById('mobileSheet');
+  const wasOpen = sheet.classList.contains('open');
+  closeAllSheets();
+  if(!wasOpen){
+    sheet.classList.add('open');
+    document.getElementById('sheetBackdrop').classList.add('show');
+  }
+}
+function toggleAiSheet(e){
+  if(e) e.stopPropagation();
+  const sheet = document.getElementById('aiStatusSheet');
+  const wasOpen = sheet.classList.contains('open');
+  closeAllSheets();
+  if(!wasOpen){
+    sheet.classList.add('open');
+    document.getElementById('sheetBackdrop').classList.add('show');
+  }
 }
 document.addEventListener('click', (e)=>{
-  const sheet = document.getElementById('mobileSheet');
+  const mSheet = document.getElementById('mobileSheet');
+  const aSheet = document.getElementById('aiStatusSheet');
   const fab = document.getElementById('mobileFab');
-  if(sheet.classList.contains('open') && !sheet.contains(e.target) && !fab.contains(e.target)){
-    sheet.classList.remove('open');
+  const aFab = document.getElementById('aiStatusFab');
+  const anyOpen = mSheet.classList.contains('open') || aSheet.classList.contains('open');
+  const clickedInside = mSheet.contains(e.target) || aSheet.contains(e.target) || fab.contains(e.target) || aFab.contains(e.target);
+  if(anyOpen && !clickedInside){
+    closeAllSheets();
   }
 });
 
@@ -1446,6 +1616,8 @@ setInterval(()=>{
   fi=(fi+1)%features.length;
   const el=document.getElementById('featureShow');
   if(el) el.textContent=features[fi];
+  const elM=document.getElementById('featureShowMobile');
+  if(elM) elM.textContent=features[fi];
 },5000);
 
 let pct=97.4;
@@ -1454,6 +1626,8 @@ setInterval(()=>{
   if(pct>99.9)pct=97.4;
   const el=document.getElementById('pct');
   if(el) el.textContent=pct.toFixed(1)+'%';
+  const elM=document.getElementById('pctMobile');
+  if(elM) elM.textContent=pct.toFixed(1)+'%';
 },2000);
 </script>
 
